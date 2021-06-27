@@ -1,9 +1,7 @@
 %%%%%%
-%input
-%%%%%%
-% node N i
+% node N is in (Y, X)
 node(N) :- init(object(node, N), value(at, pair(Y, X))).
-% highway N
+% highway N is in (Y, X)
 highway(N) :- init(object(highway, N), value(at, pair(Y, X))).
 % pickingStation N is in (Y, X)
 pickingStation(N, Y, X) : :- init(object(pickingStation, N), value(at, pair(Y, X))).
@@ -15,7 +13,9 @@ shelf(N) :- init(object(shelf, N), value(at, pair(Y, X))).
 product(N) :- init(object(product, N), value(on, pair(S, CNT))).
 % order N is for picking station TO
 order(N, TO) :- init(object(order, N), value(pickingStation, TO)).
-%order N needs P with count CNT
+
+% node N is at N
+% order N needs P with count CNT
 orderInfo(N, P, CNT) :- init(object(order, N), value(line, pair(P, CNT))).
 % robot N is in (Y, X) at time 0
 robotAt(N, Y, X, 0) :- init(object(robot, N), value(at, pair(Y, X))).
