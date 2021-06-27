@@ -1,4 +1,3 @@
-%%%%%%
 % node N is in (Y, X)
 node(N) :- init(object(node, N), value(at, pair(Y, X))).
 % highway N is in (Y, X)
@@ -14,7 +13,6 @@ product(N) :- init(object(product, N), value(on, pair(S, CNT))).
 % order N is for picking station TO
 order(N, TO) :- init(object(order, N), value(pickingStation, TO)).
 
-% node N is at N
 % order N needs P with count CNT
 orderInfo(N, P, CNT) :- init(object(order, N), value(line, pair(P, CNT))).
 % robot N is in (Y, X) at time 0
