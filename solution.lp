@@ -29,3 +29,10 @@ productInShelf(S, P, CNT, 0) :- init(object(product, P), value(on, pair(S, CNT))
 order(N, TO) :- init(object(order, N), value(pickingStation, TO)).
 %order N needs Product P with count CNT at time 0
 orderInfo(N, P, CNT, 0) :- init(object(order, N), value(line, pair(P, CNT))).
+
+
+% commonsense law of inertia
+{ robotAt(N, Y, X, T) } 1 :- robotAt(N, Y, X, T-1), T = 1..t.
+{ shelfAt(S, Y, X, T) } 1 :- shelfAt(S, Y, X, T-1), T = 1..t.
+{ productInShelf(S, P, CNT, T) } 1 :- productInShelf(S, P, CNT, T-1), T = 1..t.
+{ orderInfo(N, P, CNT, T) } 1 :- orderInfo(N, P, CNT, T-1), T = 1..t.
