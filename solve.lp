@@ -16,7 +16,7 @@ move(1, 0). move(-1, 0). move(0, 1). move(0, -1).
 % robot R put down at time T
 {putDown(R, S, T) : shelf(S)} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
 % robot R deliver product P * CNT of order O at time T
-{deliverProduct(R, O, S, P, CNT, T) : orderInfo(O, P, CNT, PS, T), productAt(P, S, TOTAL_CNT, T) CNT = 1..TOTAL_CNT} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
+{deliverProduct(R, O, S, P, CNT, T) : orderInfo(O, object(node, N), has(PR, TOTAL_T), T), productAt(P, S, TOTAL_CNT, T) CNT = 1..TOTAL_CNT} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
 
 % Define output actions
 occurs(object(robot, R), move(DX, DY), T) :- moveRobot(R, move(DY, DX), T).
@@ -40,7 +40,7 @@ occurs(object(robot, R), deliver(O, P, CNT), T) :- deliverProduct(R, O, S, P, CN
     두 상자는 한 곳에 같이 있을 수 없음
     한 상자는 두 로봇이 들 수 없음
     두 상자는 한 로봇에 있을 수 없음
-    상자 끼리 바꿀 수 없음
+    한 상자는 로봇에 있고 동시에 바닥(노드)에 있을 수 없음
     
 로봇이 움직일 때
     충돌 있으면 안 됨
@@ -59,9 +59,18 @@ occurs(object(robot, R), deliver(O, P, CNT), T) :- deliverProduct(R, O, S, P, CN
     주문의 양 보다 더 제출하면 안됨
     상품의 양 보다 더 제출하면 안됨
 
-% No two actions occur at the same time
-:- occurs(object(robot, R), A1, T), occurs(object(robot, R), A2, T), A1 != A2.
+액션 제약
+로봇이 움직이는 것
+짐을 드는 것
+짐을 내리는 것
+짐을 배달하는 것 2줄
 
+인 커먼오브센스 5개
+
+
+골 선언
+
+%%%%%%%%%%%%%%%%%%%%%%
 
 로봇은 영역을 벗어나면 안됨
 로봇은 움직이면 한칸 움직임
