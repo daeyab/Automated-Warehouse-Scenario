@@ -1,88 +1,145 @@
-#include "input.lp"
-#include "count.lp"
+#include "input.lp".
 
-% #const n = 50.
-% 움직임 네방향 존재
+%%%%%%%%%%%%%%%%%%%%%
+% initialize states %
+%%%%%%%%%%%%%%%%%%%%%
+
+% robot R is at (X, Y) at time 0
+robotAtLoc(R, X, Y, 0) :- init(object(robot, R), value(at, pair(X, Y))).
+% shelf S is at (X, Y) at time 0
+shelfAtLoc(S, X, Y, 0) :- init(object(shelf, S), value(at, pair(X, Y))).
+% shelf on robot R when time 0
+shelfOnRobot(S, 0, 0) :- shelf(S).
+% product P is in shelf S with count CNT at time 0
+productAtShelf(P, S, CNT, 0) :- init(object(product, P), value(on, pair(S, CNT))).
+% order O has 0 of TOTAL_CNT with product P at time 0
+orderInfo(O, P, 0, TOTAL_CNT, 0) :- init(object(order, O), value(line, pair(P, TOTAL_CNT))).
+% order O has product P
+orderProducts(O, P) :- init(object(order, O), value(line, pair(P, CNT))).
+
+
+%%%%%%%%%%%%%%%
+% Define States
+%%%%%%%%%%%%%%%
+
+% move 4 directions.
 move(1, 0). move(-1, 0). move(0, 1). move(0, -1).
+% robot can move at most once at time T
+{occurs(object(robot, R), move(DX, DY), T) : move(DX, DY)} 1 :- robot(R), T = 1..t.
+% robot can pick up at most once at time T
+{occurs(object(robot, R), pickUp, T)} 1 :- robot(R), T = 1..t.
+% robot can put down at most once at time T
+{occurs(object(robot, R), putDown, T) } 1 :- robot(R), T = 1..t.
+% robot can deliver all in the shelf at most once at time T
+{occurs(object(robot, R), deliver(O, P, CNT), T) } 1 :- robot(R), shelfOnRobot(S, R, T-1), productAtShelf(P, S, CNT, T-1), orderInfo(O, P, _, _, T-1), T = 1..t.
+% robot can deliver some in the shelf at most once at time T
+{occurs(object(robot, R), deliver(O, P, CNT), T) } 1 :- robot(R), shelfOnRobot(S, R, T-1), productAtShelf(P, S, _, T-1), orderInfo(O, P, EXIST_CNT, TOTAL_CNT, T-1), CNT = TOTAL_CNT-EXIST_CNT, T = 1..t.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% robot can do one action at one time
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% robot R move at time T
-{moveRobot(R, move(DY, DX), T) : move(DY, DX))} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
-% robot R pick up at time T
-{pickUp(R, S, T) : shelf(S)} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
-% robot R put down at time T
-{putDown(R, S, T) : shelf(S)} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
-% robot R deliver product P * CNT of order O at time T
-{deliverProduct(R, O, S, P, CNT, T) : orderInfo(O, object(node, N), has(PR, TOTAL_T), T), productAt(P, S, TOTAL_CNT, T) CNT = 1..TOTAL_CNT} 1 :- R = 1..RNUM, cntRobots(RNUM), T = 1..t-1.
-
-% Define output actions
-occurs(object(robot, R), move(DX, DY), T) :- moveRobot(R, move(DY, DX), T).
-occurs(object(robot, R), pickup, T) :- pickUp(R, _, T).
-occurs(object(robot, R), putdown, T) :- putDown(R, _, T).
-occurs(object(robot, R), deliver(O, P, CNT), T) :- deliverProduct(R, O, S, P, CNT, T).
-
-%%%%%%%%%%%%
-%constraints
-%%%%%%%%%%%%
-    상태 제약
-길
-    스테이션은 고속도로에 있으면 안됨
-    상자는 고속도로에 있으면 안됨
-로봇
-    한 로봇은 두 곳에 있을 수 없음
-    두 로봇은 한 곳에 같이 있을 수 없음
-    로봇 서로 자리를 바꿀 수 없음 (충돌 방지)
-상자
-    한 상자는 두 곳에 있을 수 없음
-    두 상자는 한 곳에 같이 있을 수 없음
-    한 상자는 두 로봇이 들 수 없음
-    두 상자는 한 로봇에 있을 수 없음
-    한 상자는 로봇에 있고 동시에 바닥(노드)에 있을 수 없음
-    
-로봇이 움직일 때
-    충돌 있으면 안 됨
-    상하좌우만 움직임
-    짐을 들고 있으면 안됨
-    상자를 들고 있으면 같이 움직임
-    상자가 움직이면 안의 물품도 움직임
-    
-짐 들 때
-    로봇이 짐을 들고 있으면 안됨
+%%%%%%%%%%%%%%%%%%%%%
+% state constraints %
+%%%%%%%%%%%%%%%%%%%%%
 
 
-짐 제출할 때
-    로봇이 해당 스테이션에 있어야 함
-    그 스테이션의 번호와 주문 스테이션 번호가 같아야 함
-    주문의 양 보다 더 제출하면 안됨
-    상품의 양 보다 더 제출하면 안됨
+% only in one location at time t
+% robotAtLoc
+:- not {robotAtLoc(R, X, Y, T)} = 1, robot(R), T = 1..t.
+% shelfAtLoc
+:- not {shelfAtLoc(S, X, Y, T)} = 1, shelf(S), T = 1..t.
+% shelfOnRobot
+:- not {shelfOnRobot(S, _, T)} = 1, shelf(S), T = 1..t.
+% orderInfo
+:- not {orderInfo(O, P, CNT, TOTAL_CNT, T)} = 1, orderProducts(O, P), T = 1..t. 
 
-액션 제약
-로봇이 움직이는 것
-짐을 드는 것
-짐을 내리는 것
-짐을 배달하는 것 2줄
-
-인 커먼오브센스 5개
-
-
-골 선언
+% product can't be disappeared
+:- not {productAtShelf(P, S, _, T)} = 1, productAtShelf(P, S, _, T-1), T = 1..t.
+% no shelfs having negative counts
+:- productAtShelf(P, S, CNT, T), CNT < 0, T = 1..t.
+% no order count greater than total order count
+:- orderInfo(O, P, CNT, TOTAL_CNT, T), TOTAL_CNT < CNT, T = 1..t.
 
 %%%%%%%%%%%%%%%%%%%%%%
+% action definitions %
+%%%%%%%%%%%%%%%%%%%%%%
 
-로봇은 영역을 벗어나면 안됨
-로봇은 움직이면 한칸 움직임
-로봇은 움직인 곳에서 움직인 곳으로 움직일 수 없음 ?
+% no multiple actions with robot R in time t
+:- 2 {occurs(object(robot, R), ACTION, T)}, robot(R), T = 1..t.
 
-로봇이 서랍을 들고 있다면 다른 서랍 밑으로는 지나갈 수 없음
-로봇이 서랍을 들고 있다면 다른 서랍은 들 수 없음
-= 로봇은 서랍을 최대 하나만 들 수 있음
-= 로봇은 서랍을 들고 있지 않을 때 서랍을 들 수 있음
-로봇은 서랍을 들고 있을 때만 서랍을 내려 놓을 수 있음
-로봇은 서랍을 들고 있을 때, 서랍에 있는 짐들은 같이 옮겨짐
-로봇은 서랍을 내릴 때, 서랍에 있는 짐들은 같이 내려짐
+%%%%%%%%%%%%%%%%%
+% preconditions %
+%%%%%%%%%%%%%%%%%
+
+% move %
+% no robot at unvalid location
+:- robotAtLoc(R, X, Y, T), not node(X, Y).
+% no two robot at same location concurrently
+:- robotAtLoc(R1, X, Y, T), robotAtLoc(R2, X, Y, T), R1 != R2.
+% no robot swapping location concurrently
+:- robotAtLoc(R1, X2, Y2, T), robotAtLoc(R2, X1, Y1, T), robotAtLoc(R1, X1, Y1, T-1), robotAtLoc(R2, X2, Y2, T-1), R1 != R2.
+
+% shelf %
+% no two shelves at same location concurrently
+:- shelfAtLoc(S1, X, Y, T), shelfAtLoc(S2, X, Y, T), S1 != S2.
+
+% pick up %
+% no pick up when robot are not at the shelf location
+:- occurs(object(robot, R), pickUp, T), robotAtLoc(R, X, Y, T-1), not shelfAtLoc(_, X, Y, T-1).
+% no pick up when robot already has a shelf
+:- occurs(object(robot, R), pickUp, T), shelfOnRobot(_, R, T-1).
+
+% deliver %
+% no deliver when robot is not at picking station
+:- occurs(object(robot, R), deliver(O, P, CNT), T), order(O, PS), not pickingStation(PS, X, Y), robotAtLoc(R, X, Y, T-1).
+% no deliver when robot doesn't has a shelf
+:- occurs(object(robot, R), deliver(_, _, _), T), not shelfOnRobot(_, R, T-1).
+% no deliver when robot has a shelf with no product which order needs
+:- occurs(object(robot, R), deliver(O, P, _), T), robot(R), shelfOnRobot(S, R, T-1), not productAtShelf(P, S, _, T-1).
+
+% put down %
+% no put down at highway
+:- occurs(object(robot, R), putDown, T), robotAtLoc(R, X, Y, T-1), highway(X, Y).
+% no put down when robot don't has a shelf
+:- occurs(object(robot, R), putDown, T), not shelfOnRobot(_, R, T-1).
+
+%%%%%%%%%%
+% effect %
+%%%%%%%%%%
+
+% robot moving
+robotAtLoc(R, X+DX, Y+DY, T) :- occurs(object(robot, R), move(DX, DY), T), robotAtLoc(R, X, Y, T-1).
+
+% if robot has the shelf, the shelf is at same location.
+shelfAtLoc(S, X, Y, T) :- robotAtLoc(R, X, Y, T), shelfOnRobot(S, R, T).
+
+% pick up effect %
+shelfOnRobot(S, R, T) :- occurs(object(robot, R), pickUp, T), robotAtLoc(R, X, Y, T-1), shelfAtLoc(S, X, Y, T-1).
+
+% deliver effect %
+productAtShelf(P, S, REMAINED_CNT-CNT, T) :- occurs(object(robot, R), deliver(O, P, CNT), T), shelfOnRobot(S, R, T-1), productAtShelf(P, S, REMAINED_CNT, T-1).
+orderInfo(O, P, REMAINED_CNT+CNT, TOTAL_CNT, T) :- occurs(object(robot, R), deliver(O, P, CNT), T), orderInfo(O, P, REMAINED_CNT, TOTAL_CNT, T-1).
+
+% put down effect
+shelfOnRobot(S, 0, T) :- occurs(object(robot, R), putDown, T), shelfOnRobot(S, R, T-1).
 
 
-:- move
+% objects 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Commonsense Law of Inertia
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% robotAtLoc
+{robotAtLoc(R, X, Y, T)} 1 :- robotAtLoc(R, X, Y, T-1), T = 1..t.
+% shelfAtLoc
+{shelfAtLoc(S, X, Y, T)} 1 :- shelfAtLoc(S, X, Y, T-1), T = 1..t.
+% shelfOnRobot
+{shelfOnRobot(S, R, T)} 1 :- shelfOnRobot(S, R, T-1), T = 1..t.
+% product P is in shelf S with count CNT at time 0
+{productAtShelf(P, S, CNT, T)} 1 :- productAtShelf(P, S, CNT, T-1), T = 1..t.
+% order O has 0 of TOTAL_CNT with product P at time 0
+{orderInfo(O, P, CNT, TOTAL_CNT, T)} 1 :- orderInfo(O, P, CNT, TOTAL_CNT, T-1), T = 1..t.
+
+%%%%%%
+% GOAL
+%%%%%%
+:- orderInfo(O, P, CNT, TOTAL_CNT, t), CNT != TOTAL_CNT.
+#minimize{1, T : occurs(object(robot, _), _, T)}.
+#show occurs/3.
