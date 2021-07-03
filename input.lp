@@ -1,3 +1,7 @@
+%%%%%%%%%%%%%%
+% READ INPUT %
+%%%%%%%%%%%%%%
+
 % node N is in (X, Y)
 node(X, Y) :- init(object(node, N), value(at, pair(X, Y))).
 % robot R is in (X, Y)
