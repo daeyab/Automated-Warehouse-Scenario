@@ -26,6 +26,19 @@ orderInfo(O, P, 0, TOTAL_CNT, 0) :- init(object(order, O), value(line, pair(P, T
 % order O has product P
 orderProducts(O, P) :- init(object(order, O), value(line, pair(P, CNT))).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% commonsense Law of Inertia %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% robotAtLoc
+{robotAtLoc(R, X, Y, T)} 1 :- robotAtLoc(R, X, Y, T-1), T = 1..t.
+% shelfAtLoc
+{shelfAtLoc(S, X, Y, T)} 1 :- shelfAtLoc(S, X, Y, T-1), T = 1..t.
+% shelfOnRobot
+{shelfOnRobot(S, R, T)} 1 :- shelfOnRobot(S, R, T-1), T = 1..t.
+% product P is in shelf S with count CNT at time 0
+{productAtShelf(P, S, CNT, T)} 1 :- productAtShelf(P, S, CNT, T-1), T = 1..t.
+% order O has 0 of TOTAL_CNT with product P at time 0
+{orderInfo(O, P, CNT, TOTAL_CNT, T)} 1 :- orderInfo(O, P, CNT, TOTAL_CNT, T-1), T = 1..t.
 
 %%%%%%%%%%%%%%%%%%
 % define actions %
@@ -127,17 +140,3 @@ orderInfo(O, P, REMAINED_CNT+CNT, TOTAL_CNT, T) :- occurs(object(robot, R), deli
 % put down effect
 shelfOnRobot(S, surface, T) :- occurs(object(robot, R), putDown, T), shelfOnRobot(S, R, T-1).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% commonsense Law of Inertia %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% robotAtLoc
-{robotAtLoc(R, X, Y, T)} 1 :- robotAtLoc(R, X, Y, T-1), T = 1..t.
-% shelfAtLoc
-{shelfAtLoc(S, X, Y, T)} 1 :- shelfAtLoc(S, X, Y, T-1), T = 1..t.
-% shelfOnRobot
-{shelfOnRobot(S, R, T)} 1 :- shelfOnRobot(S, R, T-1), T = 1..t.
-% product P is in shelf S with count CNT at time 0
-{productAtShelf(P, S, CNT, T)} 1 :- productAtShelf(P, S, CNT, T-1), T = 1..t.
-% order O has 0 of TOTAL_CNT with product P at time 0
-{orderInfo(O, P, CNT, TOTAL_CNT, T)} 1 :- orderInfo(O, P, CNT, TOTAL_CNT, T-1), T = 1..t.
